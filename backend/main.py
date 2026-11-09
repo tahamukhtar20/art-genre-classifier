@@ -16,7 +16,7 @@ from PIL import Image
 from pydantic import BaseModel
 
 MODEL_PATH = os.environ.get("MODEL_PATH", "model/art_genre_classifier.keras")
-# Output order of the network, fixed at training time (see notebook/train.py).
+# Output order of the network, fixed at training time (see the notebook).
 CLASSES = ["abstract", "cityscape", "portrait", "landscape", "animal-painting"]
 
 app = FastAPI()

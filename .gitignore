@@ -29,3 +29,4 @@ __pycache__/
 .venv/
 backend/model/*.keras
 backend/model/*.h5
+.venv/
