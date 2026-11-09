@@ -173,15 +173,75 @@ export default function App() {
   );
 }
 
+// Backend address; set VITE_API_URL at build time (e.g. the Hugging Face Space URL).
+const API_URL = (import.meta.env.VITE_API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+
+type ServerStatus = "waking" | "ready" | "error";
+
+/**
+ * Pings /health as soon as the page loads (which also wakes a sleeping server) and keeps
+ * polling until the model reports "ready".
+ */
+const useServerStatus = (): ServerStatus => {
+  const [status, setStatus] = useState<ServerStatus>("waking");
+  useEffect(() => {
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const check = async () => {
+      try {
+        const res = await fetch(`${API_URL}/health`, { cache: "no-store" });
+        const body = res.ok ? await res.json() : null;
+        if (body?.status === "ready") return !stopped && setStatus("ready");
+        if (body?.status === "error") return !stopped && setStatus("error");
+      } catch {
+        // server still starting: no answer yet
+      }
+      if (!stopped) timer = setTimeout(check, 2500);
+    };
+    check();
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, []);
+  return status;
+};
+
+const StatusPill = ({ status }: { status: ServerStatus }) => {
+  const look = {
+    waking: { text: "Please wait, waking up the model…", dot: "bg-amber-400 animate-pulse" },
+    ready: { text: "Ready for inference", dot: "bg-green-600" },
+    error: { text: "The model failed to load. Try again later.", dot: "bg-red-600" },
+  }[status];
+  return (
+    <div
+      className="flex items-center gap-2 w-fit px-3 py-1 border-2 border-dashed border-quaternary font-semibold text-sm"
+      role="status"
+      aria-live="polite"
+    >
+      <span className={`inline-block w-2.5 h-2.5 rounded-full ${look.dot}`} />
+      {look.text}
+    </div>
+  );
+};
+
 const DemoSection = () => {
   const [image, setImage] = useState<string | null | undefined>(null);
   const [lookup, setLookup] = useState<{
     [key: string]: string;
   } | null>(null);
+  const status = useServerStatus();
+  // A click while the model is still waking up is remembered and runs once it is ready.
+  const [queued, setQueued] = useState(false);
+  const [busy, setBusy] = useState(false);
   const classify = () => {
+    if (status !== "ready") {
+      setQueued(true);
+      return;
+    }
     const base64Image = image?.split(",")[1];
-    console.log("Classify");
-    fetch("http://localhost:8000/classify", {
+    setBusy(true);
+    fetch(`${API_URL}/classify/`, {
       method: "POST",
       headers: {
         "Content-type": "application/json",
@@ -197,7 +257,6 @@ const DemoSection = () => {
         return res.json();
       })
       .then((res) => {
-        console.log(res);
         setLookup(res);
       })
       .catch((error) => {
@@ -212,8 +271,16 @@ const DemoSection = () => {
             textAlign: "center",
           },
         });
-      });
+      })
+      .finally(() => setBusy(false));
   };
+  useEffect(() => {
+    if (queued && status === "ready") {
+      setQueued(false);
+      classify();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queued, status]);
   return (
     <div className="flex flex-col gap-4 px-2 w-full" id="demo">
       <h1 className="text-4xl font-bold text-start">Demo</h1>
@@ -259,11 +326,12 @@ const DemoSection = () => {
             <button
               className="btn-primary btn w-fit"
               type="button"
-              disabled={!image}
+              disabled={!image || busy || queued || status === "error"}
               onClick={classify}
             >
-              Classify
+              {queued ? "Waiting for the model…" : busy ? "Classifying…" : "Classify"}
             </button>
+            <StatusPill status={status} />
             <div className="p-2 border-2 border-dashed w-fit font-semibold flex justify-center items-center border-quaternary">
               The model has a validation accuracy of 87.19%
             </div>

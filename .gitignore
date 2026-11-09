@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python and model weights (the weights are too big for git; see README)
+__pycache__/
+*.pyc
+.venv/
+backend/model/*.keras
+backend/model/*.h5

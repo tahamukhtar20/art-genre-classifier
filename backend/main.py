@@ -1,77 +1,76 @@
-from fastapi import FastAPI
+"""Art Genre Classifier API.
+
+The model loads in a background thread, so the server answers straight away and `/health`
+can tell the frontend whether it is still waking up ("loading") or ready for inference.
+"""
+
+import base64
+import os
+import threading
+from io import BytesIO
+
+import numpy as np
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
-import numpy as np
-from io import BytesIO
-from keras.models import model_from_json
-from keras.applications.resnet50 import preprocess_input
-import base64
 from pydantic import BaseModel
+
+MODEL_PATH = os.environ.get("MODEL_PATH", "model/art_genre_classifier.keras")
+# Output order of the network, fixed at training time (see notebook/train.py).
+CLASSES = ["abstract", "cityscape", "portrait", "landscape", "animal-painting"]
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
-    allow_methods=['*'],
+    allow_origins=os.environ.get("ALLOWED_ORIGINS", "*").split(","),
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
+
+state = {"status": "loading", "model": None, "error": None}
+
+
+def load_model():
+    try:
+        # Imported here so the web server starts before TensorFlow finishes loading.
+        import keras
+
+        state["model"] = keras.models.load_model(MODEL_PATH)
+        state["status"] = "ready"
+    except Exception as e:  # report it on /health instead of crashing the server
+        state["status"] = "error"
+        state["error"] = str(e)
+
+
+@app.on_event("startup")
+def start_loading():
+    threading.Thread(target=load_model, daemon=True).start()
+
+
+@app.get("/health")
+def health():
+    """'loading' while the model loads, 'ready' when it can classify, 'error' if loading failed."""
+    return {"status": state["status"], "error": state["error"]}
 
 
 class ImageParams(BaseModel):
-    image: str
+    image: str  # base64, without the data URL prefix
 
 
-with open('model/model_architecture (1).json', 'r') as json_file:
-    loaded_model_json = json_file.read()
+def preprocess(img: Image.Image) -> np.ndarray:
+    from keras.applications.resnet import preprocess_input
 
-model = model_from_json(loaded_model_json)
+    arr = np.asarray(img.convert("RGB").resize((300, 300)), dtype=np.float32)
+    return preprocess_input(arr[np.newaxis])
 
-model.load_weights('model/model_weights.h5')
 
-
-def base64_to_pil_image(base64_string):
+@app.post("/classify/")
+def classify(params: ImageParams):
+    if state["status"] != "ready":
+        raise HTTPException(status_code=503, detail=f"Model is {state['status']}")
     try:
-        image_data = base64.b64decode(base64_string)
-        img = Image.open(BytesIO(image_data))
-        return img
-    except Exception as e:
-        print(f"An exception occurred while converting base64 to image: {e}")
-        return None
-
-
-def preprocess_image(img):
-    try:
-        img = img.convert("RGB")
-        img = img.resize((300, 300))
-        img_array = np.array(img)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = preprocess_input(img_array)
-        return img_array
-    except Exception as e:
-        print(f"An exception occurred while preprocessing image: {e}")
-        return None
-
-
-@app.post('/classify/')
-async def classify_image(params: ImageParams):
-    received_image = params.image
-    try:
-        img = base64_to_pil_image(received_image)
-        img.save('image.png')
-        if img is not None:
-            img_array = preprocess_image(img)
-            if img_array is not None:
-                prediction = model.predict(img_array)
-                prediction = prediction.tolist(),
-                return {
-                    "abstract": str(prediction[0][0][0]),
-                    "cityscape": str(prediction[0][0][1]),
-                    "portrait": str(prediction[0][0][2]),
-                    "landscape": str(prediction[0][0][3]),
-                    "animal-painting": str(prediction[0][0][4])
-                }
-            else:
-                return {"message": "Failed to preprocess the image"}
-        else:
-            return {"message": "Failed to convert base64 to image"}
-    except Exception as e:
-        return {"error": f"An error occurred: {str(e)}"}
+        img = Image.open(BytesIO(base64.b64decode(params.image)))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not read the image")
+    probs = state["model"].predict(preprocess(img), verbose=0)[0]
+    return {name: float(p) for name, p in zip(CLASSES, probs)}
