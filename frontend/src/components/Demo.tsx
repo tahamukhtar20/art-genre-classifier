@@ -91,8 +91,10 @@ export const Demo = () => {
               className="btn-primary btn w-fit"
               type="button"
               disabled={busy || queued || status === "error"}
+              aria-busy={busy || queued}
               onClick={run}
             >
+              {(busy || queued) && <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden />}
               {queued ? "Waiting for the model…" : busy ? "Classifying…" : "Classify"}
             </button>
             {error && (
