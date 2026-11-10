@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ArrowUp, CodeXml, ImageUp } from "lucide-react";
 import image1 from "./assets/image1.jpg";
 import image2 from "./assets/image2.jpg";
 import image3 from "./assets/image3.jpg";
-import bgSVG from "./assets/bg.svg";
 import { Demo } from "./components/Demo";
 import { perGenreAccuracy, pct, results } from "./lib/genres";
 
@@ -66,14 +65,37 @@ const Header = () => (
   </header>
 );
 
+/** Diagonal lines behind the title, drawn once on load in a quick stagger. */
+const HeroLines = () => (
+  <svg
+    className="absolute inset-0 w-full h-full opacity-20"
+    viewBox="0 0 800 800"
+    preserveAspectRatio="xMidYMid slice"
+    aria-hidden
+  >
+    {Array.from({ length: 20 }, (_, i) => (
+      <line
+        key={i}
+        className="hero-line"
+        x1={80 * (i + 1)}
+        y1={0}
+        x2={80 * (i + 1) - 800}
+        y2={800}
+        pathLength={1}
+        stroke="#291334"
+        strokeWidth={1}
+        style={{ animationDelay: `${i * 60}ms` }}
+      />
+    ))}
+  </svg>
+);
+
 const Hero = () => {
-  // A fresh URL on each load restarts the SVG's line-drawing animation.
-  const bg = useMemo(() => `${bgSVG}?${Date.now()}`, []);
   return (
     <div
-      className="border-quaternary relative bg-cover bg-center overflow-hidden border-t-2 border-dashed min-h-[calc(100vh-2.5rem)] flex flex-col justify-center items-center"
-      style={{ backgroundImage: `url(${bg})` }}
+      className="border-quaternary relative overflow-hidden border-t-2 border-dashed min-h-[calc(100vh-2.5rem)] flex flex-col justify-center items-center"
     >
+      <HeroLines />
       <div className="absolute inset-0 w-full h-full gradient-ring z-0" />
       <h1
         className="animate-fade-up justify-center bg-gradient-to-br from-black to-secondary bg-clip-text text-center font-display text-4xl font-bold tracking-[-0.02em] text-transparent opacity-0 drop-shadow-sm [text-wrap:balance] md:text-7xl md:leading-[5rem] z-10 px-4"
@@ -121,7 +143,7 @@ const Introduction = () => {
 };
 
 const PaintingStack = () => (
-  <div className="2xl:w-1/2 w-full h-96 relative flex items-center justify-center pt-16 pb-8 overflow-hidden" aria-hidden>
+  <div className="2xl:w-1/2 w-full h-96 relative flex items-center justify-center pt-16 pb-8 overflow-x-clip" aria-hidden>
     {[image1, image2, image3].map((src, i) => (
       <div
         key={i}
