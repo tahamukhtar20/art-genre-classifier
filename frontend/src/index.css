@@ -29,18 +29,10 @@
     transparent 45%,
     #faf7f5 65%
   );
-
-  /* background: radial-gradient(
-    circle closest-side,
-    rgba(0, 255, 255, 0.2) 96%,
-    rgba(0, 255, 255, 1) 97% 98%,
-    #0000
-  ); */
 }
 
-rect {
-  stroke-dashoffset: 30;
-  stroke-dashoffset: 30;
+html {
+  scroll-behavior: smooth;
 }
 
 ::-webkit-scrollbar {
