@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Toaster } from "sonner";
 import { ArrowUp, CodeXml, ImageUp } from "lucide-react";
 import image1 from "./assets/image1.jpg";
 import image2 from "./assets/image2.jpg";
@@ -13,7 +12,6 @@ const REPO = "https://github.com/tahamukhtar20/Art-Genre-Classifier";
 export default function App() {
   return (
     <>
-      <Toaster position="bottom-center" />
       <div className="container mx-auto min-h-screen flex flex-col px-2 border-dashed border-x-2 tracking-tighter border-quaternary">
         <Header />
         <Hero />

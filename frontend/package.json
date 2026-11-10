@@ -9,12 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "chart.js": "^4.4.1",
     "lucide-react": "^1.71.0",
     "react": "^18.2.0",
-    "react-chartjs-2": "^5.2.0",
-    "react-dom": "^18.2.0",
-    "sonner": "^1.2.4"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { CircleAlert, CircleCheck, LoaderCircle, Target } from "lucide-react";
 import sample from "../assets/sample.jpg";
 import { classify, useServerStatus, type ServerStatus } from "../lib/api";
@@ -23,6 +22,7 @@ export const Demo = () => {
   const [image, setImage] = useState<string | null>(null); // null: the sample painting
   const [scores, setScores] = useState<Scores | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   // A click while the model is still waking up is remembered and runs once it is ready.
   const [queued, setQueued] = useState(false);
   const status = useServerStatus();
@@ -30,9 +30,10 @@ export const Demo = () => {
   const run = () => {
     if (status !== "ready") return setQueued(true);
     setBusy(true);
+    setError(null);
     classify(image ?? sample)
       .then(setScores)
-      .catch((e: Error) => toast.error(`Could not classify the image: ${e.message}`))
+      .catch((e: Error) => setError(`Could not classify the image: ${e.message}`))
       .finally(() => setBusy(false));
   };
 
@@ -49,6 +50,7 @@ export const Demo = () => {
     reader.onload = () => {
       setImage(reader.result as string);
       setScores(null);
+      setError(null);
     };
     reader.readAsDataURL(file);
   };
@@ -93,6 +95,12 @@ export const Demo = () => {
             >
               {queued ? "Waiting for the model…" : busy ? "Classifying…" : "Classify"}
             </button>
+            {error && (
+              <p className="flex items-center gap-2 text-sm font-semibold text-red-700" role="alert">
+                <CircleAlert className="w-4 h-4 shrink-0" />
+                {error}
+              </p>
+            )}
             <div
               className="flex flex-col gap-1 w-fit p-3 border-2 border-dashed border-quaternary text-sm font-semibold"
               role="status"
