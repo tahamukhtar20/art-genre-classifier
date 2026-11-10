@@ -143,7 +143,7 @@ const Introduction = () => {
 };
 
 const PaintingStack = () => (
-  <div className="2xl:w-1/2 w-full h-96 relative flex items-center justify-center pt-16 pb-8 overflow-x-clip" aria-hidden>
+  <div className="2xl:w-1/2 w-full h-96 relative flex items-center justify-center pt-16 pb-8" aria-hidden>
     {[image1, image2, image3].map((src, i) => (
       <div
         key={i}
