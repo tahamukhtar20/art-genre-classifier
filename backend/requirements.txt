@@ -1,4 +1,4 @@
 fastapi==0.115.6
-onnxruntime==1.20.1
-numpy==2.0.2
-pillow==11.1.0
+onnxruntime==1.31.1
+numpy==2.5.4
+pillow==13.0.0
