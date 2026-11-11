@@ -62,3 +62,11 @@ npm run dev
 
 - Backend: `cd backend && vercel deploy --prod`
 - Frontend: `cd frontend && npm run build && npx wrangler deploy`, with `VITE_API_URL` set to the backend's URL at build time
+
+## License
+
+The code is MIT, see [LICENSE](LICENSE).
+
+The model is trained on WikiArt images from the Kaggle "wikiart-gangogh" dataset, which was scraped from WikiArt. WikiArt's terms allow non-commercial use only, so the model weights are released for research and non-commercial use under CC BY-NC 4.0.
+
+The abstract painting on the landing page is Wassily Kandinsky's Composition VII (1913), in the public domain, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Vassily_Kandinsky,_1913_-_Composition_7.jpg).
