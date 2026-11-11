@@ -6,7 +6,7 @@ import image3 from "./assets/image3.jpg";
 import { Demo } from "./components/Demo";
 import { perGenreAccuracy, pct, results } from "./lib/genres";
 
-const REPO = "https://github.com/tahamukhtar20/Art-Genre-Classifier";
+const REPO = "https://github.com/tahamukhtar20/art-genre-classifier";
 
 export default function App() {
   return (
